@@ -31,18 +31,18 @@ async def run_pipeline1(request: Pipeline1Request):
             batch_id=request.batch_id
         )
 
-        csv_path = None
-        csv_rows = []
         final_samples = result.get("final_samples") or []
+        csv_path = result.get("csv_path")
+        csv_rows = []
 
-        if final_samples:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            csv_path = f"outputs/{request.batch_id}_{timestamp}.csv"
-
-            # Read CSV rows to return to frontend
-            with open(csv_path, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                csv_rows = list(reader)
+        if csv_path:
+            try:
+                # Read CSV rows to return to frontend
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    csv_rows = list(reader)
+            except FileNotFoundError:
+                pass
 
         # Update DB record
         run.csv_path = csv_path

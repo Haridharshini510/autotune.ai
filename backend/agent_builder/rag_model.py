@@ -1,14 +1,15 @@
 # agent_builder/rag_model.py
 
-__import__('pysqlite3')
 import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+if sys.platform == "linux":
+    __import__('pysqlite3')
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import os
 from dotenv import load_dotenv
 
 from langchain.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
@@ -45,11 +46,17 @@ def search_knowledge_base(query: str, collection_name: str) -> str:
 
 
 def _build_agent():
-    # Ollama Qwen 1.5B - weak model, runs locally
-    model = ChatOllama(
-        model="qwen2.5:1.5b",
+    # Qwen 1.5B via llama.cpp server - weak model, runs on remote instance
+    # Get llama.cpp server URL from environment variable
+    llama_cpp_base_url = os.getenv("LLAMA_CPP_BASE_URL", "http://localhost:8080/v1")
+
+    # llama.cpp server provides OpenAI-compatible API
+    model = ChatOpenAI(
+        model="qwen2.5-1.5b",  # Model name doesn't matter much for llama.cpp
         temperature=0.7,
-        num_predict=1024
+        max_tokens=1024,
+        base_url=llama_cpp_base_url,
+        api_key="not-needed"  # llama.cpp doesn't require API key
     )
 
     return create_agent(

@@ -52,7 +52,7 @@ def print_metrics(state: dict, csv_path: str) -> None:
     table.add_column("Value", style="bold white", width=20)
 
     table.add_row("Batch ID", state.get("batch_id", "—"))
-    table.add_row("Conversations processed", str(len(state.get("conversations", []))))
+    table.add_row("Conversations input", "yes" if state.get("conversations_text") else "no")
     table.add_row("Topics identified", str(len(topic_analysis.get("topics", []))))
     table.add_row("Links fetched", str(len(link_batch.get("links", []))))
     table.add_row("Questions generated", str(len(question_set.get("questions", []))))

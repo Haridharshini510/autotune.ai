@@ -50,6 +50,8 @@ async def chat(request: ChatRequest):
     Creates new session if session_id not provided.
     """
     try:
+        print(f"[CHAT] Received query: {request.query}")
+
         # Get or create session
         if request.session_id:
             session = await ChatSession.get_or_none(session_id=request.session_id)
@@ -58,6 +60,7 @@ async def chat(request: ChatRequest):
         else:
             # Create new session
             session_id = f"session-{uuid.uuid4().hex[:8]}"
+            print(f"[CHAT] Creating new session: {session_id}")
             session = await ChatSession.create(session_id=session_id)
 
         # Generate unique message IDs
@@ -65,6 +68,7 @@ async def chat(request: ChatRequest):
         ai_msg_id = f"msg-{uuid.uuid4().hex[:12]}"
 
         # Save user message
+        print(f"[CHAT] Saving user message...")
         user_message = await ChatMessage.create(
             message_id=user_msg_id,
             session=session,
@@ -74,7 +78,9 @@ async def chat(request: ChatRequest):
         )
 
         # Get AI response
+        print(f"[CHAT] Calling llama.cpp API...")
         ai_content = simple_response(request.query)
+        print(f"[CHAT] Got response: {ai_content[:100]}...")
         model_name = "Qwen 1.5B"
 
         # Save AI message
@@ -105,6 +111,9 @@ async def chat(request: ChatRequest):
         }
 
     except Exception as e:
+        print(f"[CHAT ERROR] {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

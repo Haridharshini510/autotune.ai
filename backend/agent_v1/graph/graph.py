@@ -108,6 +108,7 @@ def run_pipeline(
     if result.get("final_samples"):
         csv_path = export_to_csv(result["final_samples"], batch_id)
         print_metrics(result, csv_path)
+        result["csv_path"] = csv_path
     else:
         print("\n[Pipeline] No final samples produced.")
         # Still print logs so you can see what happened

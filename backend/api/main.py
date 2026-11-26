@@ -1,9 +1,8 @@
 # api/main.py
 
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from tortoise import Tortoise
+from tortoise.contrib.fastapi import register_tortoise
 from dotenv import load_dotenv
 import os
 
@@ -12,35 +11,10 @@ from api.routes import pipeline1, pipeline2, test, chatbot
 # ── Load Environment Variables ────────────────────────────────
 load_dotenv()
 
-
-# ── Application Lifespan (Startup + Shutdown) ─────────────────
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # ── Startup ───────────────────────────────────────────────
-    database_url = os.getenv("DATABASE_URL")
-
-    if not database_url:
-        raise RuntimeError("DATABASE_URL is not set")
-
-    await Tortoise.init(
-        db_url=database_url,
-        modules={"models": ["db.models"]},
-    )
-
-    # Do NOT generate schemas because Aerich handles migrations
-    # await Tortoise.generate_schemas()
-
-    yield
-
-    # ── Shutdown ──────────────────────────────────────────────
-    await Tortoise.close_connections()
-
-
 # ── FastAPI App Instance ──────────────────────────────────────
 app = FastAPI(
     title="AutoTune AI",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 # ── CORS Configuration ────────────────────────────────────────
@@ -116,3 +90,23 @@ async def connectivity():
     )
 
     return {"status": overall, "checks": checks}
+
+
+# ── Database Registration ─────────────────────────────────────
+register_tortoise(
+    app,
+    config={
+        "connections": {
+            "default": os.getenv("DATABASE_URL")
+        },
+        "apps": {
+            "models": {
+                "models": ["db.models"],
+                "default_connection": "default",
+            }
+        },
+        "use_tz": False,
+    },
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
